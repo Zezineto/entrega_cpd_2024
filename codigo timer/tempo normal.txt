@@ -1,0 +1,34 @@
+nodes: 4039
+Tempo para calcular nos e arestas: 3 ms
+
+edges: 88234
+Tempo para calcular nos e arestas: 0 ms
+
+nodes (WCC): 4039
+fraction of total nodes (WCC): 1.000
+edges (WCC): 88234
+fraction of total edges (WCC): 1.000
+Tempo para calcular WCC: 115 ms
+
+Nodes in largest SCC: 4039
+fraction of total nodes (SCC): 1.000
+Edges in largest SCC: 88234
+fraction of total edges (SCC): 1.000
+Tempo para calcular SCC: 353 ms
+
+average clustering coefficient: 0.6055
+Tempo para calcular coeficiente de agrupamento: 21115 ms
+
+triangles: 1612010
+Tempo para contar triangulos: 27346 ms
+
+fraction of closed triangles: 0.2647
+Tempo para calcular fracao de triangulos fechados: 28863 ms
+
+graph diameter: 8
+Tempo para calcular o diametro: 100127 ms
+
+effective diameter (90%): 5.0000
+Tempo para calcular o diametro efetivo: 100434 ms
+
+Tempo total de execucao: 278805 ms
