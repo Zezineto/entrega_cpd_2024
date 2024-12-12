@@ -1,5 +1,10 @@
 {
-    "execution_time_ms": 964562,
+    "execution": {
+        "cpu_time_system_ms": 120,
+        "cpu_time_user_ms": 238201,
+        "memory_kb": 74380
+    },
+    "execution_time_ms": 238420,
     "graph_metrics": {
         "average_clustering_coefficient": 0.6055467186200871,
         "diameter": 8,
@@ -7,7 +12,7 @@
         "effective_diameter_90_percentile": 5.0,
         "fraction_of_closed_triangles": 0.2646618383146202,
         "largest_scc": {
-            "edges": 176468,
+            "edges": 88234,
             "fraction_of_total_edges": 1.0,
             "fraction_of_total_nodes": 1.0,
             "nodes": 4039

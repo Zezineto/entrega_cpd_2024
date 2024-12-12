@@ -12,8 +12,38 @@
 #include <fstream>
 #include "libs/json.hpp"
 
-//new
+#include <sys/resource.h> // Para medir consumo de memória e tempos de CPU
+#include <sys/time.h>     // Para tempos adicionais
+#include <pthread.h>
+#include <cstring>
+
 using json = nlohmann::json;
+
+// Função para obter métricas de execução
+void collectExecutionMetrics(json &output) {
+    struct rusage usage;
+    getrusage(RUSAGE_SELF, &usage);
+
+    // Tempo de CPU ocupado (em microssegundos)
+    long user_time_ms = usage.ru_utime.tv_sec * 1000 + usage.ru_utime.tv_usec / 1000;
+    long system_time_ms = usage.ru_stime.tv_sec * 1000 + usage.ru_stime.tv_usec / 1000;
+
+    // Consumo de memória máxima (em KB)
+    long memory_kb = usage.ru_maxrss;
+
+    // Adiciona ao JSON
+    output["execution"] = {
+        {"cpu_time_user_ms", user_time_ms},
+        {"cpu_time_system_ms", system_time_ms},
+        {"memory_kb", memory_kb}
+    };
+
+    // Mostra no terminal
+    std::cout << "\nExecution Metrics:\n";
+    std::cout << "CPU Time (User): " << user_time_ms << " ms\n";
+    std::cout << "CPU Time (System): " << system_time_ms << " ms\n";
+    std::cout << "Memory Usage: " << memory_kb << " KB\n";
+}
 
 // Função para realizar BFS e encontrar o componente conectado
 void bfs(const std::unordered_map<int, std::vector<int>> &adj_list, int start_node, std::set<int> &visited, std::set<int> &component) {
@@ -155,30 +185,6 @@ void computeFractions(int largest_wcc_size, int largest_wcc_edges, int total_nod
 }
 
 // Função para calcular o coeficiente de agrupamento de um nó
-double calculateClusteringCoefficient(const std::unordered_map<int, std::vector<int>> &adj_list, int node) {
-    const auto &neighbors = adj_list.at(node);
-    int degree = neighbors.size();
-    if (degree < 2) {
-        return 0.0; // Sem triângulos possíveis
-    }
-
-    // Usar conjunto para eficiência
-    std::set<int> neighbor_set(neighbors.begin(), neighbors.end());
-    int triangle_count = 0;
-
-    for (size_t i = 0; i < neighbors.size(); ++i) {
-        for (size_t j = i + 1; j < neighbors.size(); ++j) {
-            if (neighbor_set.find(neighbors[j]) != neighbor_set.end() && 
-                std::find(adj_list.at(neighbors[i]).begin(), adj_list.at(neighbors[i]).end(), neighbors[j]) != adj_list.at(neighbors[i]).end()) {
-                triangle_count++;
-            }
-        }
-    }
-
-    return static_cast<double>(2 * triangle_count) / (degree * (degree - 1));
-}
-
-// CALCULA AVERAGE CLUSTERING COEFFICIENT
 double computeAverageClusteringCoefficient(const std::unordered_map<int, std::vector<int>> &adj_list, const std::set<int> &nodes) {
     double total_clustering = 0.0;
 
@@ -345,12 +351,13 @@ double calculateEffectiveDiameter(const std::unordered_map<int, std::vector<int>
     double fraction = exact_index - lower_index;
     return distances[lower_index] + fraction * (distances[upper_index] - distances[lower_index]);
 }
+
 int main() {
     std::unordered_map<int, std::vector<int>> adj_list;
     std::set<int> nodes;
     int edge_count = 0;
 
-    // Início do timer
+    // Início do timer para carregar o grafo
     auto start_time = std::chrono::high_resolution_clock::now();
 
     // Carregar o grafo
@@ -359,82 +366,119 @@ int main() {
     }
 
 
-    // NÓS
-    std::cout << "nodes: " << nodes.size() << std::endl;
-    // ARESTAS
-    std::cout << "edges: " << edge_count << std::endl;
+    auto loadGraph_end = std::chrono::high_resolution_clock::now();
+    std::cout << "\nTime to load graph: "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(loadGraph_end - start_time).count() << " ms\n";
 
+    // NÓS
+    auto nodes_start = std::chrono::high_resolution_clock::now();
+    std::cout << "\nnodes: " << nodes.size() << "\n";
+    auto nodes_end = std::chrono::high_resolution_clock::now();
+    std::cout << "Time for nodes: "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(nodes_end - nodes_start).count() << " ms\n\n";
+
+    // ARESTAS
+    auto edges_start = std::chrono::high_resolution_clock::now();
+    std::cout << "edges: " << edge_count << "\n";
+    auto edges_end = std::chrono::high_resolution_clock::now();
+    std::cout << "Time for edges: "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(edges_end - edges_start).count() << " ms\n\n";
 
     // WCC 
+    auto wcc_start = std::chrono::high_resolution_clock::now();
     int largest_wcc_size = 0;
     int largest_wcc_edges = 0;
     computeLargestWCC(adj_list, nodes, largest_wcc_size, largest_wcc_edges);
     double fraction_nodes = 0.0, fraction_edges = 0.0;
     computeFractions(largest_wcc_size, largest_wcc_edges, nodes.size(), edge_count, fraction_nodes, fraction_edges);
-    std::cout << "nodes (WCC): " << largest_wcc_size << std::endl;
-    std::cout << "fraction of total nodes (WCC): " << std::fixed << std::setprecision(3) << fraction_nodes << std::endl;
-    std::cout << "edges (WCC): " << largest_wcc_edges << std::endl;
-    std::cout << "fraction of total edges (WCC): " << std::fixed << std::setprecision(3) << fraction_edges << std::endl;
-    
+    auto wcc_end = std::chrono::high_resolution_clock::now();
+    std::cout << "nodes (WCC): " << largest_wcc_size << "\n";
+    std::cout << "fraction of total nodes (WCC): " << std::fixed << std::setprecision(3) << fraction_nodes << "\n";
+    std::cout << "edges (WCC): " << largest_wcc_edges << "\n";
+    std::cout << "fraction of total edges (WCC): " << std::fixed << std::setprecision(3) << fraction_edges << "\n";
+    std::cout << "Time for WCC: "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(wcc_end - wcc_start).count() << " ms\n\n";
 
-    //new
-    //calculo do SCC
+    // SCC
+    auto scc_start = std::chrono::high_resolution_clock::now();
     int largest_scc_size = 0;
     int largest_scc_edges = 0;
     computeLargestSCC(adj_list, nodes, largest_scc_size, largest_scc_edges);
+    double fraction_nodes_scc = 0.0, fraction_edges_scc = 0.0;
+    computeFractions(largest_scc_size, largest_scc_edges / 2, nodes.size(), edge_count, fraction_nodes_scc, fraction_edges_scc);
+    auto scc_end = std::chrono::high_resolution_clock::now();
+    std::cout << "Nodes in largest SCC: " << largest_scc_size << "\n";
+    std::cout << "fraction of total nodes (SCC): " << std::fixed << std::setprecision(3) << fraction_nodes_scc << "\n";
+    std::cout << "Edges in largest SCC: " << (largest_scc_edges / 2) << "\n";
+    std::cout << "fraction of total edges (SCC): " << std::fixed << std::setprecision(3) << fraction_edges_scc << "\n";
+    std::cout << "Time for SCC: "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(scc_end - scc_start).count() << " ms\n\n";
 
-    std::cout << "Nodes in largest SCC: " << largest_scc_size << std::endl;
-    std::cout << "Edges in largest SCC: " << (largest_scc_edges/2) << std::endl;
-    //new
-
+    
 
     // COEFICIENTE DE AGRUPAMENTO MÉDIO
+    auto clustering_start = std::chrono::high_resolution_clock::now();
     double average_clustering_coefficient = computeAverageClusteringCoefficient(adj_list, nodes);
-    std::cout << "average clustering coefficient: " << std::fixed << std::setprecision(4) << average_clustering_coefficient << std::endl;
+    auto clustering_end = std::chrono::high_resolution_clock::now();
+    std::cout << "average clustering coefficient: " << std::fixed << std::setprecision(4) << average_clustering_coefficient << "\n";
+    std::cout << "Time for clustering coefficient: "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(clustering_end - clustering_start).count() << " ms\n\n";
 
     // TRIÂNGULOS
+    auto triangles_start = std::chrono::high_resolution_clock::now();
     int total_triangles = countTriangles(adj_list, nodes);
-    std::cout << "triangles: " << total_triangles << std::endl;
+    auto triangles_end = std::chrono::high_resolution_clock::now();
+    std::cout << "triangles: " << total_triangles << "\n";
+    std::cout << "Time for triangles: "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(triangles_end - triangles_start).count() << " ms\n\n";
 
     // FRAÇÃO DE TRIÂNGULOS FECHADOS
+    auto closed_triangles_start = std::chrono::high_resolution_clock::now();
     double fraction_closed_triangles = calculateFractionOfClosedTriangles(adj_list, nodes);
-    std::cout << "fraction of closed triangles: " << std::fixed << std::setprecision(4) << fraction_closed_triangles << std::endl;
+    auto closed_triangles_end = std::chrono::high_resolution_clock::now();
+    std::cout << "fraction of closed triangles: " << std::fixed << std::setprecision(4) << fraction_closed_triangles << "\n";
+    std::cout << "Time for fraction of closed triangles: "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(closed_triangles_end - closed_triangles_start).count() << " ms\n\n";
 
     // DIÂMETRO DO GRAFO
+    auto diameter_start = std::chrono::high_resolution_clock::now();
     int graph_diameter = calculateGraphDiameter(adj_list, nodes);
-    std::cout << "graph diameter: " << graph_diameter << std::endl;
+    auto diameter_end = std::chrono::high_resolution_clock::now();
+    std::cout << "graph diameter: " << graph_diameter << "\n";
+    std::cout << "Time for graph diameter: "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(diameter_end - diameter_start).count() << " ms\n\n";
 
-
-    // DIÃMETRO EFETIVO DO GRAFO
+    // DIÂMETRO EFETIVO DO GRAFO
+    auto effective_diameter_start = std::chrono::high_resolution_clock::now();
     double effective_diameter = calculateEffectiveDiameter(adj_list, nodes);
-    std::cout << "effective diameter (90%): " << std::fixed << std::setprecision(4) << effective_diameter << std::endl;
+    auto effective_diameter_end = std::chrono::high_resolution_clock::now();
+    std::cout << "effective diameter (90%): " << std::fixed << std::setprecision(4) << effective_diameter << "\n";
+    std::cout << "Time for effective diameter: "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(effective_diameter_end - effective_diameter_start).count() << " ms\n";
 
-    // Fim do timer
+    // Fim do timer geral
     auto end_time = std::chrono::high_resolution_clock::now();
     auto total_duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
-
-
-    // Tempo total de execução
-    std::cout << "\nTempo total de execucao: " << total_duration << " ms" << std::endl;
+    std::cout << "\nTotal execution time: " << total_duration << " ms\n";
 
     // Criar o JSON com as métricas
-    int node_count = nodes.size();           
+    int node_count = nodes.size();
     json output;
-    output["graph_metrics"]["nodes"] = node_count;
+    output["graph_metrics"]["nodes"] = nodes.size();
     output["graph_metrics"]["edges"] = edge_count;
 
     output["graph_metrics"]["largest_wcc"] = {
         {"nodes", largest_wcc_size},
-        {"fraction_of_total_nodes", static_cast<double>(largest_wcc_size) / node_count},
+        {"fraction_of_total_nodes", static_cast<double>(largest_wcc_size) / nodes.size()},
         {"edges", largest_wcc_edges},
         {"fraction_of_total_edges", static_cast<double>(largest_wcc_edges) / edge_count}
     };
 
     output["graph_metrics"]["largest_scc"] = {
         {"nodes", largest_scc_size},
-        {"fraction_of_total_nodes", static_cast<double>(largest_scc_size) / node_count},
-        {"edges", largest_scc_edges},
-        {"fraction_of_total_edges", (static_cast<double>(largest_scc_edges) / edge_count)/2}
+        {"fraction_of_total_nodes", static_cast<double>(largest_scc_size) / nodes.size()},
+        {"edges", (largest_scc_edges/2)},
+        {"fraction_of_total_edges", (static_cast<double>(largest_scc_edges) / edge_count) / 2}
     };
 
     output["graph_metrics"]["average_clustering_coefficient"] = average_clustering_coefficient;
@@ -445,11 +489,14 @@ int main() {
 
     output["execution_time_ms"] = total_duration;
 
+    // Coletar métricas adicionais
+    collectExecutionMetrics(output);
+
     // Salvar o JSON no arquivo
     std::ofstream file("dados_exportados.json");
     file << output.dump(4); // Indentação para facilitar a leitura
     file.close();
 
-    std::cout << "Métricas exportadas para 'dados_exportados.json'." << std::endl;
+    std::cout << "Metrics exported to 'dados_exportados.json'.\n";
     return 0;
 }
