@@ -1,29 +1,29 @@
 {
     "execution": {
-        "cpu_time_system_ms": 120,
-        "cpu_time_user_ms": 238201,
-        "memory_kb": 74380
+        "cpu_time_system_ms": 354,
+        "cpu_time_user_ms": 15382,
+        "memory_kb": 268816
     },
-    "execution_time_ms": 238420,
+    "execution_time_ms": 17600,
     "graph_metrics": {
-        "average_clustering_coefficient": 0.6055467186200871,
-        "diameter": 8,
-        "edges": 88234,
-        "effective_diameter_90_percentile": 5.0,
-        "fraction_of_closed_triangles": 0.2646618383146202,
+        "average_clustering_coefficient": 0.14217142857142853,
+        "diameter": 5,
+        "edges": 5105039,
+        "effective_diameter_90_percentile": 2.0,
+        "fraction_of_closed_triangles": 0.7165109034267912,
         "largest_scc": {
-            "edges": 88234,
-            "fraction_of_total_edges": 1.0,
-            "fraction_of_total_nodes": 1.0,
-            "nodes": 4039
+            "edges": 22,
+            "fraction_of_total_edges": 0.01921397379912664,
+            "fraction_of_total_nodes": 0.008,
+            "nodes": 8
         },
         "largest_wcc": {
-            "edges": 88234,
-            "fraction_of_total_edges": 1.0,
-            "fraction_of_total_nodes": 1.0,
-            "nodes": 4039
+            "edges": 7,
+            "fraction_of_total_edges": 0.00611353711790393,
+            "fraction_of_total_nodes": 0.008,
+            "nodes": 8
         },
-        "nodes": 4039,
-        "triangles": 1612010
+        "nodes": 875713,
+        "triangles": 230
     }
 }
