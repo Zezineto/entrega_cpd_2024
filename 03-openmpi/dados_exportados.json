@@ -1,0 +1,29 @@
+{
+    "execution": {
+        "cpu_time_system_ms": 321,
+        "cpu_time_user_ms": 14637,
+        "memory_kb": 292056
+    },
+    "execution_time_ms": 17993,
+    "graph_metrics": {
+        "average_clustering_coefficient": 0.0,
+        "diameter": 5,
+        "edges": 5105039,
+        "effective_diameter_90_percentile": 2.0,
+        "fraction_of_closed_triangles": 0.7165109034267912,
+        "largest_scc": {
+            "edges": 0,
+            "fraction_of_total_edges": 0.0,
+            "fraction_of_total_nodes": 0.0,
+            "nodes": 0
+        },
+        "largest_wcc": {
+            "edges": 0,
+            "fraction_of_total_edges": 0.0,
+            "fraction_of_total_nodes": 0.009,
+            "nodes": 9
+        },
+        "nodes": 875713,
+        "triangles": 0
+    }
+}
